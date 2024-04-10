@@ -3,12 +3,17 @@ import { Alert, Image, ScrollView, Text, View } from 'react-native'
 import * as ImagePicker from 'expo-image-picker'
 import * as ImageManipulator from 'expo-image-manipulator'
 
+import { api } from '@/services/api'
+
 import { Button } from '@/components/button'
-import { Item } from '@/components/item';
+import { Item, ItemProps } from '@/components/item';
 import { ButtonSend } from '@/components/button-send';
+import Loading from '@/components/loading';
 
 export default function Home() {
   const [selectedImageUri, setSelectedImageUri] = useState('');
+  const [isLoading, setIsLoading] = useState(false)
+  const [items, setItems] = useState<ItemProps[]>([])
 
   async function handleSelectImage() {
     try {
@@ -18,6 +23,8 @@ export default function Home() {
         return Alert.alert('É necessário conceder permissão para acessar a galeria de imagens!')
       }
 
+      setIsLoading(true)
+
       const response = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
@@ -26,21 +33,75 @@ export default function Home() {
       });
 
       if (response.canceled) {
-        return;
+        return setIsLoading(false);
       }
 
       if (!response.canceled) {
-        
+        const imgManipuled = await ImageManipulator.manipulateAsync(
+          response.assets[0].uri,
+          [{ resize: { width: 500 } }],
+          { 
+            compress: 1, 
+            format: ImageManipulator.SaveFormat.JPEG ,
+            base64: true
+          }
+        );
+        setSelectedImageUri(imgManipuled.uri)
+        pragueDetect(imgManipuled.base64)
       }
-
     } catch (error) {
       console.log(error)
     }
   }
 
+  async function pragueDetect(imageBase64: string | undefined) {
+    const response = await api.post('/predict', { 
+      "inputs": [
+        {
+          "data": {
+            "image": {
+              "base64": imageBase64
+            }
+          }
+        }
+      ]
+    })
+    
+    // const pragues = response.data.map((concept: any) => {
+    //   return {
+    //     name: concept.data.pred_class.charAt(0).toUpperCase() + concept.data.pred_class.slice(1),
+    //     percentage: `${Math.round(concept.data.pred_prob[0] * 100)}%`
+    //   }
+    // })
+
+    const pragues = response.data.map((concept: any) => {
+      const probabilities = concept.data.pred_prob.map((prob: number) => Math.round(prob * 100));
+      const [maxPerc, minPerc] = [Math.max(...probabilities), Math.min(...probabilities)];
+
+      let nameMax, nameMin
+
+      if (concept.data.pred_class === 'praga') {
+        nameMax = 'Praga';
+        nameMin = 'Saudável';
+      } 
+
+      if (concept.data.pred_class === 'saudavel') {
+        nameMax = 'Saudável';
+        nameMin = 'Praga';
+      }
+
+      return [{ name: nameMax, percentage: `${maxPerc}%` }, { name: nameMin, percentage: `${minPerc}%` }];
+    });
+
+    console.log(pragues)
+
+    setItems(pragues.flat())
+    setIsLoading(false)
+  }
+
   return (
     <View className='flex-1 bg-white'>
-      <Button onPress={handleSelectImage} />
+      <Button onPress={handleSelectImage} disabled={isLoading} />
 
       {
         selectedImageUri ?
@@ -56,14 +117,24 @@ export default function Home() {
       }
 
       <View className="flex-1 bg-gray-300 rounded-t-3xl px-6 -mt-10 pt-3">
-        <ButtonSend message="Enviar imagem" />
+        {
+          isLoading ? <Loading /> :
+          <>
+            <ButtonSend message="Enviar imagem" />
 
-        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingVertical: 24 }}>
-          <View className="flex-1 gap-3">
-            <Item data={{ name: 'Soja com praga', percentage: '95%' }} />
-            <Item data={{ name: 'Soja saudável', percentage: '5%' }} />
-          </View>
-        </ScrollView>
+            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingVertical: 24 }}>
+              <View className="flex-1 gap-3">
+                {/* ajustar o código para usar o componente Item */}
+                {
+                  items.map((item, index) => (
+                    <Item key={index} data={item} />
+                  ))
+            
+                }
+              </View>
+            </ScrollView>
+          </>
+        }
       </View>
     </View>
   )
