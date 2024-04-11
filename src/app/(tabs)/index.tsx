@@ -124,7 +124,6 @@ export default function Home() {
 
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingVertical: 24 }}>
               <View className="flex-1 gap-3">
-                {/* ajustar o código para usar o componente Item */}
                 {
                   items.map((item, index) => (
                     <Item key={index} data={item} />
