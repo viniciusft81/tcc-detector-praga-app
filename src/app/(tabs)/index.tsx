@@ -10,6 +10,13 @@ import { Item, ItemProps } from '@/components/item';
 import { ButtonSend } from '@/components/button-send';
 import Loading from '@/components/loading';
 
+interface ResponseTypePlant {
+  pred_class: string,
+  prague_prob: number, 
+  healthy_prob: number
+  message?: string
+}
+
 export default function Home() {
   const [selectedImageUri, setSelectedImageUri] = useState('');
   const [isLoading, setIsLoading] = useState(false)
@@ -55,7 +62,7 @@ export default function Home() {
   }
 
   async function pragueDetect(imageBase64: string | undefined) {
-    const response = await api.post('/predict', { 
+    const {data, status} = await api.post<ResponseTypePlant>('/predict', { 
       "inputs": [
         {
           "data": {
@@ -66,36 +73,30 @@ export default function Home() {
         }
       ]
     })
+
+    console.log(data)
+
+    if (status !== 200) {
+      return Alert.alert('Erro ao analisar a imagem, tente novamente!')
+    }
+
+    console.log(data.healthy_prob, data.prague_prob)
+
+    let newItems:ItemProps[] 
     
-    // const pragues = response.data.map((concept: any) => {
-    //   return {
-    //     name: concept.data.pred_class.charAt(0).toUpperCase() + concept.data.pred_class.slice(1),
-    //     percentage: `${Math.round(concept.data.pred_prob[0] * 100)}%`
-    //   }
-    // })
+    if (data.message) {
+      newItems = [
+        {name: data.message, percentage: "100%"},
+      ]
+    } else {
+      newItems = [
+        {name: "Saudável", percentage: `${Math.round(data.healthy_prob*100)}%`},
+        {name: "Praga", percentage: `${Math.round(data.prague_prob*100)}%`},
+      ]
+  }
 
-    const pragues = response.data.map((concept: any) => {
-      const probabilities = concept.data.pred_prob.map((prob: number) => Math.round(prob * 100));
-      const [maxPerc, minPerc] = [Math.max(...probabilities), Math.min(...probabilities)];
-
-      let nameMax, nameMin
-
-      if (concept.data.pred_class === 'praga') {
-        nameMax = 'Praga';
-        nameMin = 'Saudável';
-      } 
-
-      if (concept.data.pred_class === 'saudavel') {
-        nameMax = 'Saudável';
-        nameMin = 'Praga';
-      }
-
-      return [{ name: nameMax, percentage: `${maxPerc}%` }, { name: nameMin, percentage: `${minPerc}%` }];
-    });
-
-    console.log(pragues)
-
-    setItems(pragues.flat())
+    console.log(newItems)
+    setItems(newItems)
     setIsLoading(false)
   }
 
