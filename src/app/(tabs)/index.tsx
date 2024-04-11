@@ -74,13 +74,9 @@ export default function Home() {
       ]
     })
 
-    console.log(data)
-
     if (status !== 200) {
       return Alert.alert('Erro ao analisar a imagem, tente novamente!')
     }
-
-    console.log(data.healthy_prob, data.prague_prob)
 
     let newItems:ItemProps[] 
     
@@ -93,7 +89,7 @@ export default function Home() {
         {name: "Saudável", percentage: `${Math.round(data.healthy_prob*100)}%`},
         {name: "Praga", percentage: `${Math.round(data.prague_prob*100)}%`},
       ]
-  }
+    }
 
     console.log(newItems)
     setItems(newItems)
