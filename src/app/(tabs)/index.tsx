@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useRef, useMemo } from 'react';
 import { Alert, Image, ScrollView, Text, View } from 'react-native'
 import * as ImagePicker from 'expo-image-picker'
 import * as ImageManipulator from 'expo-image-manipulator'
+import BottomSheet from '@gorhom/bottom-sheet'
 
 import { api } from '@/services/api'
 
@@ -9,6 +10,7 @@ import { Button } from '@/components/button'
 import { Item, ItemProps } from '@/components/item';
 import { ButtonSend } from '@/components/button-send';
 import Loading from '@/components/loading';
+import { ButtonGallery } from '@/components/button-gallery';
 
 interface ResponseTypePlant {
   pred_class: string,
@@ -21,6 +23,48 @@ export default function Home() {
   const [selectedImageUri, setSelectedImageUri] = useState('');
   const [isLoading, setIsLoading] = useState(false)
   const [items, setItems] = useState<ItemProps[]>([])
+
+  const bottomSheetRef = useRef<BottomSheet>(null)
+  const snapPoints = useMemo(() => ['7%', '25%', '50%', '55%'], [])
+
+  async function handleTakePicture() {
+    try {
+      const { status } = await ImagePicker.requestCameraPermissionsAsync();
+
+      if (status !== ImagePicker.PermissionStatus.GRANTED) {
+        return Alert.alert('É necessário conceder permissão para acessar a câmera!')
+      }
+
+      setIsLoading(true)
+
+      const response = await ImagePicker.launchCameraAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [4, 4],
+        quality: 1,
+      });
+
+      if (response.canceled) {
+        return setIsLoading(false);
+      }
+
+      if (!response.canceled) {
+        const imgManipuled = await ImageManipulator.manipulateAsync(
+          response.assets[0].uri,
+          [{ resize: { width: 500 } }],
+          { 
+            compress: 1, 
+            format: ImageManipulator.SaveFormat.JPEG ,
+            base64: true
+          }
+        );
+        setSelectedImageUri(imgManipuled.uri)
+        pragueDetect(imgManipuled.base64)
+      }
+    } catch (error) {
+      console.log(error)
+    }
+  }
 
   async function handleSelectImage() {
     try {
@@ -98,8 +142,11 @@ export default function Home() {
 
   return (
     <View className='flex-1 bg-white'>
-      <Button onPress={handleSelectImage} disabled={isLoading} />
 
+      <Button onPress={handleTakePicture} disabled={isLoading} />
+
+      <ButtonGallery onPress={handleSelectImage} disabled={isLoading} />
+      
       {
         selectedImageUri ?
           <Image
@@ -109,16 +156,21 @@ export default function Home() {
           />
           :
           <Text className='text-green-600 font-body text-center text-sm flex-1' style={{ textAlignVertical: "center" }}>
-            Selecione a foto da sua plantação para analisar.
+            Selecione ou fotografe sua plantação para analisar.
           </Text>
       }
 
-      <View className="flex-1 bg-gray-300 rounded-t-3xl px-6 -mt-10 pt-3">
+      <BottomSheet
+        ref={bottomSheetRef}
+        index={0}
+        snapPoints={snapPoints}
+        backgroundStyle={{ backgroundColor: '#D0D5DB' }}
+      >
+        <Text className="text-green-600 font-heading text-xl m-8">Resultados</Text>
+
         {
           isLoading ? <Loading /> :
           <>
-            <ButtonSend message="Enviar imagem" />
-
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingVertical: 24 }}>
               <View className="flex-1 gap-3">
                 {
@@ -131,7 +183,25 @@ export default function Home() {
             </ScrollView>
           </>
         }
-      </View>
+      </BottomSheet>
+
+      {/* <View className="flex-1 bg-gray-300 rounded-t-3xl px-6 -mt-10 pt-3">
+        {
+          isLoading ? <Loading /> :
+          <>
+            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingVertical: 24 }}>
+              <View className="flex-1 gap-3">
+                {
+                  items.map((item, index) => (
+                    <Item key={index} data={item} />
+                  ))
+            
+                }
+              </View>
+            </ScrollView>
+          </>
+        }
+      </View> */}
     </View>
   )
 }
