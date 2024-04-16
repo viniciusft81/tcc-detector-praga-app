@@ -8,7 +8,6 @@ import { api } from '@/services/api'
 
 import { Button } from '@/components/button'
 import { Item, ItemProps } from '@/components/item';
-import { ButtonSend } from '@/components/button-send';
 import Loading from '@/components/loading';
 import { ButtonGallery } from '@/components/button-gallery';
 
@@ -25,7 +24,7 @@ export default function Home() {
   const [items, setItems] = useState<ItemProps[]>([])
 
   const bottomSheetRef = useRef<BottomSheet>(null)
-  const snapPoints = useMemo(() => ['7%', '25%', '50%', '55%'], [])
+  const snapPoints = useMemo(() => ['7%', '25%', '50%', '53%'], [])
 
   async function handleTakePicture() {
     try {
@@ -155,18 +154,18 @@ export default function Home() {
             resizeMode="cover"
           />
           :
-          <Text className='text-green-600 font-body text-center text-sm flex-1' style={{ textAlignVertical: "center" }}>
+          <Text className='text-green-600 font-body text-center text-sm flex-1 mt-4 py-52'>
             Selecione ou fotografe sua plantação para analisar.
           </Text>
       }
 
       <BottomSheet
         ref={bottomSheetRef}
-        index={0}
+        index={1}
         snapPoints={snapPoints}
         backgroundStyle={{ backgroundColor: '#D0D5DB' }}
       >
-        <Text className="text-green-600 font-heading text-xl m-8">Resultados</Text>
+        <Text className="text-green-600 font-heading text-xl m-8 self-center right-1">Resultados</Text>
 
         {
           isLoading ? <Loading /> :
