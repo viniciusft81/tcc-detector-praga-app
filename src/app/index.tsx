@@ -42,7 +42,7 @@ export default function Splash() {
 
   function onEndSplash() {
     setTimeout(() => {
-      router.push("/(tabs)")
+      router.navigate("/home")
     }, 2000)
   }
 
