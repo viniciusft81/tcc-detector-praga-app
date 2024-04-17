@@ -16,6 +16,7 @@ import { Button } from '@/components/button'
 import { Item, ItemProps } from '@/components/item';
 import Loading from '@/components/loading';
 import { ButtonGallery } from '@/components/button-gallery';
+import { MenuResult } from '@/components/menu-result';
 
 
 interface ResponseTypePlant {
@@ -30,6 +31,7 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(false)
   const [items, setItems] = useState<ItemProps[]>([])
   const [bottomSheetOpen, setBottomSheetOpen] = useState(false);
+  const [menuResult, setMenuResult] = useState(false);
 
 
   const bottomSheetRef = useRef<BottomSheet>(null)
@@ -42,6 +44,10 @@ export default function Home() {
   const handleBottomSheetClose = () => {
     setBottomSheetOpen(false);
   };
+
+  function handleCloseMenuResult() {
+    setMenuResult(!menuResult)
+  }
 
   async function handleTakePicture() {
     try {
@@ -154,6 +160,7 @@ export default function Home() {
     console.log(newItems)
     setItems(newItems)
     setIsLoading(false)
+    setMenuResult(true)
   }
 
   const translateY = useSharedValue(0);
@@ -224,6 +231,15 @@ export default function Home() {
               </View>
             </ScrollView>
           </>
+        }
+
+        {
+          items.length > 0 && menuResult && 
+            <MenuResult 
+              onClear={handleCloseMenuResult} 
+              onResultIncorrect={() => {}} 
+              onResultCorrect={() => {}} 
+            />
         }
       </BottomSheet>
     </View>

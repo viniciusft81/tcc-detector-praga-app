@@ -1,6 +1,6 @@
 import "@/styles/global.css"
 import { Slot } from "expo-router"
-import { StatusBar } from "expo-status-bar"
+import { StatusBar } from "react-native"
 import { GestureHandlerRootView } from "react-native-gesture-handler"
 import * as SplashScreen from "expo-splash-screen"
 
@@ -26,8 +26,8 @@ export default function Layout() {
   
   return (
     <GestureHandlerRootView style={ { flex: 1} }>
-      <StatusBar style="dark" />
-       <Slot />
+      <StatusBar barStyle={"dark-content"} />
+       {fontsLoaded && <Slot />}
     </GestureHandlerRootView>
   )
 }
