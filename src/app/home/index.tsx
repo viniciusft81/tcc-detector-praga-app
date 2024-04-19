@@ -1,14 +1,9 @@
-import { useState, useRef, useMemo, useEffect } from 'react';
-import { Alert, Image, ScrollView, Text, View } from 'react-native'
+import { useState, useRef, useMemo } from 'react';
+import { Alert, Image, Text, View } from 'react-native'
 import * as ImagePicker from 'expo-image-picker'
 import * as ImageManipulator from 'expo-image-manipulator'
-import BottomSheet from '@gorhom/bottom-sheet'
-
-import Animated, { 
-  useSharedValue, 
-  withSpring, 
-  useAnimatedStyle, 
-} from 'react-native-reanimated'
+import BottomSheet, { BottomSheetScrollView } from '@gorhom/bottom-sheet'
+import { router } from 'expo-router'
 
 import { api } from '@/services/api'
 
@@ -17,7 +12,8 @@ import { Item, ItemProps } from '@/components/item';
 import Loading from '@/components/loading';
 import { ButtonGallery } from '@/components/button-gallery';
 import { MenuResult } from '@/components/menu-result';
-
+import { MaterialIcons } from '@expo/vector-icons';
+import { ModalResult } from '@/components/modal-result';
 
 interface ResponseTypePlant {
   pred_class: string,
@@ -30,23 +26,27 @@ export default function Home() {
   const [selectedImageUri, setSelectedImageUri] = useState('');
   const [isLoading, setIsLoading] = useState(false)
   const [items, setItems] = useState<ItemProps[]>([])
-  const [bottomSheetOpen, setBottomSheetOpen] = useState(false);
   const [menuResult, setMenuResult] = useState(false);
+  const [incorrect, setIncorrect] = useState(false);
+  const [openModal, setOpenModal] = useState(false)
 
+  let imageBase64: string | undefined
 
   const bottomSheetRef = useRef<BottomSheet>(null)
   const snapPoints = useMemo(() => ['7%', '25%', '50%', '53%'], [])
 
-  const handleBottomSheetOpen = () => {
-    setBottomSheetOpen(true);
-  };
-
-  const handleBottomSheetClose = () => {
-    setBottomSheetOpen(false);
-  };
-
   function handleCloseMenuResult() {
     setMenuResult(!menuResult)
+  }
+
+  function handleOpenMenuResult() {
+    setMenuResult(true)
+  }
+
+  function handleResultIncorrect() {
+    setIncorrect(true)
+    handleCloseMenuResult()
+    setOpenModal(true)
   }
 
   async function handleTakePicture() {
@@ -80,6 +80,7 @@ export default function Home() {
             base64: true
           }
         );
+        imageBase64 = imgManipuled.base64
         setSelectedImageUri(imgManipuled.uri)
         pragueDetect(imgManipuled.base64)
       }
@@ -119,6 +120,7 @@ export default function Home() {
             base64: true
           }
         );
+        imageBase64 = imgManipuled.base64
         setSelectedImageUri(imgManipuled.uri)
         pragueDetect(imgManipuled.base64)
       }
@@ -154,6 +156,12 @@ export default function Home() {
       newItems = [
         {name: "Saudável", percentage: `${Math.round(data.healthy_prob*100)}%`},
         {name: "Praga", percentage: `${Math.round(data.prague_prob*100)}%`},
+        {name: "Praga", percentage: `${Math.round(data.prague_prob*100)}%`},
+        {name: "Praga", percentage: `${Math.round(data.prague_prob*100)}%`},
+        {name: "Praga", percentage: `${Math.round(data.prague_prob*100)}%`},
+        {name: "Praga", percentage: `${Math.round(data.prague_prob*100)}%`},
+        {name: "Praga", percentage: `${Math.round(data.prague_prob*100)}%`},
+
       ]
     }
 
@@ -163,32 +171,11 @@ export default function Home() {
     setMenuResult(true)
   }
 
-  const translateY = useSharedValue(0);
-
-  const buttonAnimatedStyle = useAnimatedStyle(() => {
-    return {
-      transform: [{ translateY: withSpring(translateY.value) }],
-    };
-  });
-  
-  const updateButtonPosition = () => {
-    const translateYValue = bottomSheetOpen ? 200 : 0; // modifica a altura dos botões
-    translateY.value = translateYValue;
-  };
-
-  useEffect(() => {
-    updateButtonPosition();
-  }, [bottomSheetOpen]);
-
   return (
     <View className='flex-1 bg-white'>
-      
-      <Animated.View style={[{zIndex: 10}, buttonAnimatedStyle]}>
-        <Button onPress={handleTakePicture} disabled={isLoading} />
 
-        <ButtonGallery onPress={handleSelectImage} disabled={isLoading} />
-      </Animated.View>
-
+      <Button onPress={handleTakePicture} disabled={isLoading} />
+      <ButtonGallery onPress={handleSelectImage} disabled={isLoading} />
       {
         selectedImageUri ?
           <Image
@@ -207,20 +194,28 @@ export default function Home() {
         index={1}
         snapPoints={snapPoints}
         backgroundStyle={{ backgroundColor: '#D0D5DB' }}
-        onChange={(index) => {
-          if (index === 1) {
-            handleBottomSheetOpen();
-          } else {
-            handleBottomSheetClose();
-          }
-        }}
       >
-        <Text className="text-green-600 font-heading text-xl m-8 self-center right-1">Resultados</Text>
+        <View className="border-b-[1px] border-green-700/20 z-10">
+          <Text className="text-green-600 font-heading text-xl m-8 mb-1 self-center right-1">Resultados</Text>
 
+          {!menuResult  &&
+            <MaterialIcons 
+              className={items.length === 0  ? 'hidden' : "top-2 absolute right-6 mt-5"} 
+              name="feedback" size={24}
+              onPress={handleOpenMenuResult} 
+              color="#16a34a" 
+            />
+          }
+
+        </View>
+  
         {
           isLoading ? <Loading /> :
           <>
-            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingVertical: 24 }}>
+            <BottomSheetScrollView 
+              showsVerticalScrollIndicator={false} 
+              contentContainerStyle={{ paddingVertical: 18 }}
+            >
               <View className="flex-1 gap-3">
                 {
                   items.map((item, index) => (
@@ -228,20 +223,24 @@ export default function Home() {
                   ))
             
                 }
+
               </View>
-            </ScrollView>
+            </BottomSheetScrollView>
           </>
         }
-
-        {
-          items.length > 0 && menuResult && 
-            <MenuResult 
-              onClear={handleCloseMenuResult} 
-              onResultIncorrect={() => {}} 
-              onResultCorrect={() => {}} 
-            />
-        }
       </BottomSheet>
+        {
+        items.length > 0 && menuResult && 
+          <MenuResult 
+            onClear={handleCloseMenuResult} 
+            onResultIncorrect={handleResultIncorrect} 
+            onResultCorrect={() => {}} 
+          />  
+        }
+        <ModalResult
+          openModal={openModal}
+          onSendImage={() => {}}
+        />
     </View>
   )
 }

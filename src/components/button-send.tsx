@@ -1,19 +1,23 @@
-import { Text, TouchableOpacity, TouchableOpacityProps } from 'react-native';
+import { Text, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 
-type Props = TouchableOpacityProps & {
-  title: string;
+type Props = {
+  message: string;
+  onSendImage: () => void;
 }
 
-export function ButtonSend({ title, ...rest }: Props) {
-  const colorButton = title === 'Incorreta' ? 'bg-red-500' : 'bg-green-600';
-
+export function ButtonSend({ message }: Props) {
   return (
-    <TouchableOpacity 
-      activeOpacity={0.7} 
-      className={`h-12 w-1/2 ${colorButton} align-center justify-center rounded-md`}
-      {...rest}
-    >
-      <Text className="text-white font-body text-sm self-center">{title}</Text>
-    </TouchableOpacity>
-  );
+    <View className="w-full flex flex-row gap-3 items-center h-14 rounded-lg justify-center bg-green-600">
+      <Ionicons
+        name="leaf"
+        color="#FFF"
+        size={24}
+      />
+      
+      <Text className="font-body text-base text-white">
+        {message}
+      </Text>
+    </View>
+  )
 }

@@ -1,8 +1,7 @@
 import { Text, View } from "react-native"
 import Animated, { SlideInDown, BounceOutDown } from "react-native-reanimated"
 import { MaterialIcons } from "@expo/vector-icons"
-
-import { ButtonSend } from '@/components/button-send'
+import { ButtonResult } from "./button-result"
 
 type Props = {
   onClear: () => void
@@ -13,7 +12,7 @@ type Props = {
 export function MenuResult({ onClear, onResultIncorrect, onResultCorrect }: Props) {
   return (
     <Animated.View 
-      className="bg-slate-800 p-6 rounded-3xl absolute bottom-6 w-11/12 self-center"
+      className="bg-slate-800 p-6 rounded-3xl absolute bottom-16 w-11/12 self-center"
       entering={SlideInDown.duration(500)} 
       exiting={BounceOutDown}
     >
@@ -23,9 +22,8 @@ export function MenuResult({ onClear, onResultIncorrect, onResultCorrect }: Prop
       </View>
 
       <View className="flex-row gap-3">
-
-        <ButtonSend title="Incorreta" onPress={onResultIncorrect} />
-        <ButtonSend title="Correta" onPress={onResultCorrect} />
+        <ButtonResult title="Incorreta" onPress={onResultIncorrect} />
+        <ButtonResult title="Correta" onPress={onResultCorrect} />
       </View>
     </Animated.View>
   )
