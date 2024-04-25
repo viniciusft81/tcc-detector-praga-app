@@ -3,7 +3,6 @@ import { Alert, Image, Text, View } from 'react-native'
 import * as ImagePicker from 'expo-image-picker'
 import * as ImageManipulator from 'expo-image-manipulator'
 import BottomSheet, { BottomSheetScrollView } from '@gorhom/bottom-sheet'
-import { router } from 'expo-router'
 
 import { api } from '@/services/api'
 
@@ -16,21 +15,26 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { ModalResult } from '@/components/modal-result';
 
 interface ResponseTypePlant {
-  pred_class: string,
-  prague_prob: number, 
+  pred_class: string
+  prague_prob: number 
   healthy_prob: number
   message?: string
 }
 
+interface ResponseResultCorrection {
+  message: string
+}
+
 export default function Home() {
   const [selectedImageUri, setSelectedImageUri] = useState('');
+  const [imageBase64, setImageBase64] = useState<string | undefined>(undefined);
   const [isLoading, setIsLoading] = useState(false)
   const [items, setItems] = useState<ItemProps[]>([])
   const [menuResult, setMenuResult] = useState(false);
   const [incorrect, setIncorrect] = useState(false);
   const [openModal, setOpenModal] = useState(false)
-
-  let imageBase64: string | undefined
+  const [label, setLabel] = useState('')
+  const [predClass, setPredClass] = useState('')
 
   const bottomSheetRef = useRef<BottomSheet>(null)
   const snapPoints = useMemo(() => ['7%', '25%', '50%', '53%'], [])
@@ -47,6 +51,20 @@ export default function Home() {
     setIncorrect(true)
     handleCloseMenuResult()
     setOpenModal(true)
+  }
+
+  function handleToggleModal() {
+    setOpenModal(!openModal)
+  }
+
+  function handleChangeLabel(text: string) {
+    setLabel(text)
+  }
+
+  function handleResultCorrect() {
+    setIncorrect(true)
+    handleCloseMenuResult()
+    return Alert.alert("Obrigado pelo feedback!")
   }
 
   async function handleTakePicture() {
@@ -80,7 +98,7 @@ export default function Home() {
             base64: true
           }
         );
-        imageBase64 = imgManipuled.base64
+        setImageBase64(imgManipuled.base64)
         setSelectedImageUri(imgManipuled.uri)
         pragueDetect(imgManipuled.base64)
       }
@@ -120,7 +138,7 @@ export default function Home() {
             base64: true
           }
         );
-        imageBase64 = imgManipuled.base64
+        setImageBase64(imgManipuled.base64)
         setSelectedImageUri(imgManipuled.uri)
         pragueDetect(imgManipuled.base64)
       }
@@ -130,45 +148,72 @@ export default function Home() {
   }
 
   async function pragueDetect(imageBase64: string | undefined) {
-    const {data, status} = await api.post<ResponseTypePlant>('/predict', { 
-      "inputs": [
-        {
+    try {
+      const {data, status} = await api.post<ResponseTypePlant>('/predictions', { 
+        "inputs": [
+          {
+            "data": {
+              "image": {
+                "base64": imageBase64
+              }
+            }
+          }
+        ]
+      })
+      
+      if (status !== 200) {
+        return Alert.alert('Erro ao analisar a imagem, tente novamente!')
+      }
+
+      let newItems:ItemProps[] 
+
+      if (data.message) {
+        newItems = [
+          {name: data.message, percentage: "100%"},
+        ]
+      } else {
+        newItems = [
+          {name: "Saudável", percentage: `${Math.round(data.healthy_prob*100)}%`},
+          {name: "Praga", percentage: `${Math.round(data.prague_prob*100)}%`},
+          {name: "Praga", percentage: `${Math.round(data.prague_prob*100)}%`},
+          {name: "Praga", percentage: `${Math.round(data.prague_prob*100)}%`},
+          {name: "Praga", percentage: `${Math.round(data.prague_prob*100)}%`},
+          {name: "Praga", percentage: `${Math.round(data.prague_prob*100)}%`},
+          {name: "Praga", percentage: `${Math.round(data.prague_prob*100)}%`},
+  
+        ]
+      }
+      console.log(newItems)
+      setItems(newItems)
+      setIsLoading(false)
+      setIncorrect(false)
+      setMenuResult(true)
+      setPredClass(data.pred_class)
+    } catch (error) {
+      console.log(error)
+    }
+  }
+
+  async function sendImageWithLabelCorrect(imageBase64: string | undefined, labelCorrect: string) {
+    const {data, status} = await api.post<ResponseResultCorrection>('/result_correction', { 
           "data": {
             "image": {
               "base64": imageBase64
-            }
+            },
+            "result": predClass,
+            "result_correction": labelCorrect
           }
-        }
-      ]
     })
+    console.log(data)
 
     if (status !== 200) {
-      return Alert.alert('Erro ao analisar a imagem, tente novamente!')
+      return Alert.alert('Erro ao enviar a correção do rótulo da imagem, tente novamente!')
     }
-
-    let newItems:ItemProps[] 
     
-    if (data.message) {
-      newItems = [
-        {name: data.message, percentage: "100%"},
-      ]
-    } else {
-      newItems = [
-        {name: "Saudável", percentage: `${Math.round(data.healthy_prob*100)}%`},
-        {name: "Praga", percentage: `${Math.round(data.prague_prob*100)}%`},
-        {name: "Praga", percentage: `${Math.round(data.prague_prob*100)}%`},
-        {name: "Praga", percentage: `${Math.round(data.prague_prob*100)}%`},
-        {name: "Praga", percentage: `${Math.round(data.prague_prob*100)}%`},
-        {name: "Praga", percentage: `${Math.round(data.prague_prob*100)}%`},
-        {name: "Praga", percentage: `${Math.round(data.prague_prob*100)}%`},
-
-      ]
-    }
-
-    console.log(newItems)
-    setItems(newItems)
-    setIsLoading(false)
-    setMenuResult(true)
+    setOpenModal(false)
+    setLabel('')
+    setIncorrect(true)
+    return Alert.alert(data.message)
   }
 
   return (
@@ -198,7 +243,7 @@ export default function Home() {
         <View className="border-b-[1px] border-green-700/20 z-10">
           <Text className="text-green-600 font-heading text-xl m-8 mb-1 self-center right-1">Resultados</Text>
 
-          {!menuResult  &&
+          {!menuResult  && !incorrect &&
             <MaterialIcons 
               className={items.length === 0  ? 'hidden' : "top-2 absolute right-6 mt-5"} 
               name="feedback" size={24}
@@ -234,12 +279,15 @@ export default function Home() {
           <MenuResult 
             onClear={handleCloseMenuResult} 
             onResultIncorrect={handleResultIncorrect} 
-            onResultCorrect={() => {}} 
+            onResultCorrect={handleResultCorrect} 
           />  
         }
         <ModalResult
           openModal={openModal}
-          onSendImage={() => {}}
+          label={label}
+          onHandleToggleModal={openModal ? handleToggleModal : () => {}}
+          onSendImage={() => sendImageWithLabelCorrect(imageBase64, label)}
+          onChangeLabel={(label) => handleChangeLabel(label)}
         />
     </View>
   )

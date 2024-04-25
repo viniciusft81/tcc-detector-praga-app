@@ -1,4 +1,4 @@
-import { Text, View } from 'react-native';
+import { Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 type Props = {
@@ -6,9 +6,12 @@ type Props = {
   onSendImage: () => void;
 }
 
-export function ButtonSend({ message }: Props) {
+export function ButtonSend({ message, onSendImage }: Props) {
   return (
-    <View className="w-full flex flex-row gap-3 items-center h-14 rounded-lg justify-center bg-green-600">
+    <TouchableOpacity 
+      className="w-full flex flex-row gap-3 items-center h-14 rounded-lg justify-center bg-green-600 z-10"
+      onPress={onSendImage}
+    >
       <Ionicons
         name="leaf"
         color="#FFF"
@@ -18,6 +21,6 @@ export function ButtonSend({ message }: Props) {
       <Text className="font-body text-base text-white">
         {message}
       </Text>
-    </View>
+    </TouchableOpacity>
   )
 }
