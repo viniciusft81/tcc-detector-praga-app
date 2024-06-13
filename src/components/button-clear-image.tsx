@@ -1,17 +1,17 @@
 import { TouchableOpacity, TouchableOpacityProps } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 
-export function Button({ ...rest }: TouchableOpacityProps) {
+export function ButtonClearImage({ ...rest }: TouchableOpacityProps) {
   return (
     <TouchableOpacity
       activeOpacity={0.7}
-      className={"w-16 h-16 rounded-2xl flex items-center justify-center bg-emerald-800 absolute right-10 top-80 z-10"}
+      className={"w-10 h-10 rounded-xl flex items-center justify-center bg-emerald-800 absolute right-10 top-14 z-10"}
       {...rest}
     >
       <MaterialIcons
-        name="photo-camera"
+        name="close"
         color="#FFF"
-        size={28}
+        size={22}
       />
     </TouchableOpacity>
   );

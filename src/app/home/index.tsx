@@ -13,6 +13,9 @@ import { ButtonGallery } from '@/components/button-gallery';
 import { MenuResult } from '@/components/menu-result';
 import { MaterialIcons } from '@expo/vector-icons';
 import { ModalResult } from '@/components/modal-result';
+import { Toast } from '@/components/toast';
+import { ToastError } from '@/components/toast-error';
+import { ButtonClearImage } from '@/components/button-clear-image';
 
 interface ResponseTypePlant {
   pred_class: string
@@ -33,6 +36,9 @@ export default function Home() {
   const [menuResult, setMenuResult] = useState(false);
   const [incorrect, setIncorrect] = useState(false);
   const [openModal, setOpenModal] = useState(false)
+  const [toastError, setToastError] = useState(false)
+  const [toastSuccess, setToastSuccess] = useState(false)
+  const [imageSent, setImageSent] = useState(false)
   const [label, setLabel] = useState('')
   const [predClass, setPredClass] = useState('')
 
@@ -51,10 +57,21 @@ export default function Home() {
     setIncorrect(true)
     handleCloseMenuResult()
     setOpenModal(true)
+    setImageSent(true)
   }
 
   function handleToggleModal() {
     setOpenModal(!openModal)
+    setImageSent(false)
+  }
+
+  function handleClearSelectedImage() {
+    setSelectedImageUri('')
+    setItems([])
+    setIncorrect(false)
+    setImageSent(false)
+    setToastSuccess(false)
+    setToastError(false)
   }
 
   function handleChangeLabel(text: string) {
@@ -63,8 +80,9 @@ export default function Home() {
 
   function handleResultCorrect() {
     setIncorrect(true)
+    setImageSent(true)
+    setToastSuccess(true)
     handleCloseMenuResult()
-    return Alert.alert("Obrigado pelo feedback!")
   }
 
   async function handleTakePicture() {
@@ -98,6 +116,8 @@ export default function Home() {
             base64: true
           }
         );
+        setToastSuccess(false)
+        setToastError(false)
         setImageBase64(imgManipuled.base64)
         setSelectedImageUri(imgManipuled.uri)
         pragueDetect(imgManipuled.base64)
@@ -138,6 +158,8 @@ export default function Home() {
             base64: true
           }
         );
+        setToastSuccess(false)
+        setToastError(false)
         setImageBase64(imgManipuled.base64)
         setSelectedImageUri(imgManipuled.uri)
         pragueDetect(imgManipuled.base64)
@@ -187,6 +209,7 @@ export default function Home() {
       setItems(newItems)
       setIsLoading(false)
       setIncorrect(false)
+      setImageSent(false)
       setMenuResult(true)
       setPredClass(data.pred_class)
     } catch (error) {
@@ -207,20 +230,28 @@ export default function Home() {
     console.log(data)
 
     if (status !== 200) {
-      return Alert.alert('Erro ao enviar a correção do rótulo da imagem, tente novamente!')
+      return setToastError(true)
     }
-    
+
+    setToastSuccess(true)
     setOpenModal(false)
     setLabel('')
     setIncorrect(true)
-    return Alert.alert(data.message)
   }
 
+  const showIcon = !menuResult && !incorrect || !imageSent
+  const iconClass = items.length === 0 ? 'hidden' : "top-2 absolute right-6 mt-5"
+
   return (
-    <View className='flex-1 bg-white'>
+    <View className='flex-1 bg-[#052E39]'>
 
       <Button onPress={handleTakePicture} disabled={isLoading} />
       <ButtonGallery onPress={handleSelectImage} disabled={isLoading} />
+
+      {
+        selectedImageUri && <ButtonClearImage onPress={handleClearSelectedImage} />
+      }
+
       {
         selectedImageUri ?
           <Image
@@ -229,7 +260,7 @@ export default function Home() {
             resizeMode="cover"
           />
           :
-          <Text className='text-green-600 font-body text-center text-sm flex-1 mt-4 py-52'>
+          <Text className='text-white font-subtitle text-center text-sm flex-1 mt-4 py-52'>
             Selecione ou fotografe sua plantação para analisar.
           </Text>
       }
@@ -238,17 +269,17 @@ export default function Home() {
         ref={bottomSheetRef}
         index={1}
         snapPoints={snapPoints}
-        backgroundStyle={{ backgroundColor: '#D0D5DB' }}
+        backgroundStyle={{ backgroundColor: '#032027' }}
       >
-        <View className="border-b-[1px] border-green-700/20 z-10">
-          <Text className="text-green-600 font-heading text-xl m-8 mb-1 self-center right-1">Resultados</Text>
-
-          {!menuResult  && !incorrect &&
+        <View className="border-b-[1px] border-white/20 z-10">
+          <Text className="text-white font-heading text-xl m-8 mb-1 self-center right-1">Resultados</Text>
+          
+          { showIcon &&
             <MaterialIcons 
-              className={items.length === 0  ? 'hidden' : "top-2 absolute right-6 mt-5"} 
+              className={iconClass} 
               name="feedback" size={24}
               onPress={handleOpenMenuResult} 
-              color="#16a34a" 
+              color="#065f46" 
             />
           }
 
@@ -289,6 +320,13 @@ export default function Home() {
           onSendImage={() => sendImageWithLabelCorrect(imageBase64, label)}
           onChangeLabel={(label) => handleChangeLabel(label)}
         />
+        {
+          toastSuccess && <Toast message="Agradecemos pelo feedback!" />
+        }
+
+        {
+          toastError && <ToastError message="Erro ao enviar a correção do rótulo da imagem!" />
+        }
     </View>
   )
 }
