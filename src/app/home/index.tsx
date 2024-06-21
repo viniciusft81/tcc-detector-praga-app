@@ -218,7 +218,7 @@ export default function Home() {
   }
 
   async function sendImageWithLabelCorrect(imageBase64: string | undefined, labelCorrect: string) {
-    const {data, status} = await api.post<ResponseResultCorrection>('/result_correction', { 
+    const {data, status} = await api.post<ResponseResultCorrection>('/feedback', { 
           "data": {
             "image": {
               "base64": imageBase64
