@@ -19,8 +19,11 @@ import { ButtonClearImage } from '@/components/button-clear-image';
 
 interface ResponseTypePlant {
   pred_class: string
-  prague_prob: number 
+  lagarta_das_vagens_prob: number
+	lagarta_soja_prob: number
+	percevejo_soja_prob: number
   healthy_prob: number
+  vaquinha_prob: number
   message?: string
 }
 
@@ -188,21 +191,18 @@ export default function Home() {
       }
 
       let newItems:ItemProps[] 
-
+      console.log(data)
       if (data.message) {
         newItems = [
           {name: data.message, percentage: "100%"},
         ]
       } else {
         newItems = [
+          {name: "Lagarta das vagens", percentage: `${Math.round(data.lagarta_das_vagens_prob*100)}%`},
+          {name: "Lagarta da soja", percentage: `${Math.round(data.lagarta_soja_prob*100)}%`},
+          {name: "Percevejo da soja", percentage: `${Math.round(data.percevejo_soja_prob*100)}%`},
           {name: "Saudável", percentage: `${Math.round(data.healthy_prob*100)}%`},
-          {name: "Praga", percentage: `${Math.round(data.prague_prob*100)}%`},
-          {name: "Praga", percentage: `${Math.round(data.prague_prob*100)}%`},
-          {name: "Praga", percentage: `${Math.round(data.prague_prob*100)}%`},
-          {name: "Praga", percentage: `${Math.round(data.prague_prob*100)}%`},
-          {name: "Praga", percentage: `${Math.round(data.prague_prob*100)}%`},
-          {name: "Praga", percentage: `${Math.round(data.prague_prob*100)}%`},
-  
+          {name: "Vaquinha verde e amarelo", percentage: `${Math.round(data.vaquinha_prob*100)}%`},
         ]
       }
       console.log(newItems)
